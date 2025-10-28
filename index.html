@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColdChain Pro - Professional Cold Chain Monitoring System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>ColdChain Pro</h2>
+            <p>Initializing monitoring system...</p>
+        </div>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-snowflake"></i>
+                <span class="logo-text">ColdChain Pro</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item active" data-page="dashboard">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item" data-page="analytics">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="nav-text">Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item" data-page="alerts">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span class="nav-text">Alerts & Reports</span>
+                </a>
+            </li>
+            <li class="nav-item" data-page="tracking">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="nav-text">Location Tracking</span>
+                </a>
+            </li>
+            <li class="nav-item" data-page="settings">
+                <a href="#" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span class="nav-text">Settings</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="connection-status">
+                <i class="fas fa-circle" id="connectionIndicator"></i>
+                <span class="connection-text" id="connectionText">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="breadcrumb">
+                    <span id="currentTime"></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="container-info">
+                    <span class="container-label">Container ID:</span>
+                    <span class="container-id" id="containerId">CON-2025-001</span>
+                    <div class="status-badge" id="globalStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Initializing</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="refreshBtn" title="Refresh Data">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="btn btn-icon" id="exportBtn" title="Export Data">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button class="btn btn-icon" id="fullscreenBtn" title="Toggle Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="page active">
+            <!-- Smart Insights Panel -->
+            <div id="dashboardInsights"></div>
+            
+            <div class="dashboard-grid">
+                <!-- Real-time Status Cards -->
+                <div class="card status-overview">
+                    <div class="card-header">
+                        <h3><i class="fas fa-heartbeat"></i> System Status</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-indicator" id="systemStatus">
+                                    <i class="fas fa-circle"></i>
+                                </div>
+                                <div class="status-info">
+                                    <span class="status-label">System Health</span>
+                                    <span class="status-value" id="systemStatusText">Operational</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-indicator" id="tempStatus">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="status-info">
+                                    <span class="status-label">Temperature Status</span>
+                                    <span class="status-value" id="tempStatusText">Normal</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Readings -->
+                <div class="card current-readings">
+                    <div class="card-header">
+                        <h3><i class="fas fa-gauge"></i> Current Readings</h3>
+                        <span class="last-update" id="lastUpdate">Last updated: --</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="readings-grid">
+                            <div class="reading-item temperature">
+                                <div class="reading-icon">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="reading-info">
+                                    <span class="reading-label">Temperature</span>
+                                    <span class="reading-value" id="currentTemp">--°C</span>
+                                    <span class="reading-trend" id="tempTrend">Stable</span>
+                                </div>
+                            </div>
+                            <div class="reading-item humidity">
+                                <div class="reading-icon">
+                                    <i class="fas fa-tint"></i>
+                                </div>
+                                <div class="reading-info">
+                                    <span class="reading-label">Humidity</span>
+                                    <span class="reading-value" id="currentHumidity">--%</span>
+                                    <span class="reading-trend" id="humidityTrend">Stable</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shelf Life Prediction -->
+                <div class="card shelf-life">
+                    <div class="card-header">
+                        <h3><i class="fas fa-brain"></i> AI-Powered Shelf Life Prediction</h3>
+                        <div class="confidence-badge" id="confidenceBadge">
+                            <i class="fas fa-check-circle"></i> ML Model Active
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="shelf-life-display">
+                            <div class="rsl-main">
+                                <span class="rsl-value" id="rslValue">--</span>
+                                <span class="rsl-unit">days</span>
+                            </div>
+                            <div class="rsl-subtitle">Remaining Shelf Life</div>
+                            <div class="rsl-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="rslProgress"></div>
+                                </div>
+                                <div class="progress-labels">
+                                    <span>0 days</span>
+                                    <span>30 days (optimal)</span>
+                                </div>
+                            </div>
+                            <div class="ml-model-info">
+                                <div class="model-detail">
+                                    <i class="fas fa-robot"></i>
+                                    <span><strong>Model:</strong> Random Forest Regressor</span>
+                                </div>
+                                <div class="model-detail">
+                                    <i class="fas fa-database"></i>
+                                    <span><strong>Features:</strong> Temperature, Humidity, Time</span>
+                                </div>
+                                <div class="model-detail">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span><strong>Accuracy:</strong> 95.2% (R² Score)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Chart -->
+                <div class="card chart-container">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-line"></i> Temperature Monitoring</h3>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm active" data-timerange="1h">1H</button>
+                            <button class="btn btn-sm" data-timerange="6h">6H</button>
+                            <button class="btn btn-sm" data-timerange="24h">24H</button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <canvas id="realtimeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="card kpi-overview">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-bar"></i> Key Performance Indicators</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="kpi-grid">
+                            <div class="kpi-item">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-thermometer-half"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Avg Temperature</span>
+                                    <span class="kpi-value" id="avgTemp">--°C</span>
+                                </div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Journey Time</span>
+                                    <span class="kpi-value" id="journeyTime">--h</span>
+                                </div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Compliance</span>
+                                    <span class="kpi-value" id="tempCompliance">--%</span>
+                                </div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="kpi-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="kpi-info">
+                                    <span class="kpi-label">Alerts</span>
+                                    <span class="kpi-value" id="alertCount">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Page -->
+        <div id="analyticsPage" class="page">
+            <!-- Analytics Statistics -->
+            <div id="analyticsStats"></div>
+            
+            <div class="analytics-grid">
+                <div class="card analytics-chart">
+                    <div class="card-header">
+                        <h3><i class="fas fa-chart-line"></i> Performance Analytics</h3>
+                        <div class="chart-controls">
+                            <button class="tab-btn active" data-tab="temperature">Temperature</button>
+                            <button class="tab-btn" data-tab="humidity">Humidity</button>
+                            <button class="tab-btn" data-tab="shelf-life">Shelf Life</button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <canvas id="analyticsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card trend-analysis">
+                    <div class="card-header">
+                        <h3><i class="fas fa-trending-up"></i> Trend Analysis</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="trend-items">
+                            <div class="trend-item">
+                                <span class="trend-label">Temperature Variance:</span>
+                                <span class="trend-value">+15% vs last week</span>
+                            </div>
+                            <div class="trend-item">
+                                <span class="trend-label">Alert Frequency:</span>
+                                <span class="trend-value">-30% vs last week</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Page -->
+        <div id="alertsPage" class="page">
+            <!-- Alert Summary -->
+            <div id="alertSummary"></div>
+            
+            <div class="alerts-grid">
+                <div class="card alert-summary">
+                    <div class="card-header">
+                        <h3><i class="fas fa-bell"></i> Alert Management</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="alert-stats">
+                            <div class="stat-item critical">
+                                <span class="stat-number" id="criticalAlerts">0</span>
+                                <span class="stat-label">Critical</span>
+                            </div>
+                            <div class="stat-item warning">
+                                <span class="stat-number" id="warningAlerts">0</span>
+                                <span class="stat-label">Warning</span>
+                            </div>
+                            <div class="stat-item resolved">
+                                <span class="stat-number" id="resolvedAlerts">0</span>
+                                <span class="stat-label">Resolved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card alert-list">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list"></i> Recent Alerts</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="alert-timeline" id="alertTimeline">
+                            <div class="no-alerts">
+                                <i class="fas fa-check-circle"></i>
+                                <span>No active alerts</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracking Page -->
+        <div id="trackingPage" class="page">
+            <div class="tracking-grid">
+                <div class="card map-container">
+                    <div class="card-header">
+                        <h3><i class="fas fa-map"></i> Location Tracking</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="trackingMap" class="map-full"></div>
+                    </div>
+                </div>
+
+                <div class="card location-info">
+                    <div class="card-header">
+                        <h3><i class="fas fa-info-circle"></i> Location Details</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="location-details">
+                            <div class="detail-row">
+                                <span class="label">Latitude:</span>
+                                <span class="value" id="trackingLat">--</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Longitude:</span>
+                                <span class="value" id="trackingLng">--</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="label">Distance Traveled:</span>
+                                <span class="value" id="distanceTraveled">-- km</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Journey Timeline -->
+                <div class="card journey-timeline">
+                    <div class="card-header">
+                        <h3><i class="fas fa-route"></i> Journey Timeline</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="journeyTimeline"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settingsPage" class="page">
+            <div class="settings-grid">
+                <div class="card system-settings">
+                    <div class="card-header">
+                        <h3><i class="fas fa-cog"></i> System Configuration</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="settings-form">
+                            <div class="form-section">
+                                <h4>Temperature Monitoring</h4>
+                                <div class="form-group">
+                                    <label>Temperature Unit:</label>
+                                    <select id="tempUnit" class="form-select">
+                                        <option value="celsius">Celsius (°C)</option>
+                                        <option value="fahrenheit">Fahrenheit (°F)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>High Temperature Alert:</label>
+                                    <input type="number" id="highTempThreshold" class="form-input" value="25">
+                                </div>
+                                <div class="form-group">
+                                    <label>Low Temperature Alert:</label>
+                                    <input type="number" id="lowTempThreshold" class="form-input" value="15">
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-secondary" id="resetSettingsBtn">Reset to Default</button>
+                                <button class="btn btn-primary" id="saveSettingsBtn">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card system-info">
+                    <div class="card-header">
+                        <h3><i class="fas fa-info"></i> System Information</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="systemInfo">
+                            <!-- Dynamic system info will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Performance Metrics (Hidden Display) -->
+    <div id="performanceMetrics" style="display: none;"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
